@@ -45,20 +45,7 @@ const PROMPT_TIMEOUT = 120_000;
  * protocol or streaming bugs. When a test hits one of these, it's an
  * environment problem — not a code defect — so we report it and pass.
  */
-const AUTH_QUOTA_PATTERNS = [
-  /auth/i,
-  /quota/i,
-  /rate.?limit/i,
-  /unauthorized/i,
-  /403/,
-  /401/,
-  /api.?key/i,
-  /credential/i,
-  /token.*expired/i,
-  /permission.*denied/i,
-  /billing/i,
-  /exceeded/i,
-];
+const AUTH_QUOTA_PATTERNS = [/auth/i, /quota/i, /rate.?limit/i, /unauthorized/i, /403/, /401/, /api.?key/i, /credential/i, /token.*expired/i, /permission.*denied/i, /billing/i, /exceeded/i];
 
 function isAuthOrQuotaError(error: unknown): boolean {
   const msg = error instanceof Error ? error.message : String(error);
@@ -220,7 +207,7 @@ describe('Agent Connectivity Integration Tests', () => {
           expect(initResponse).toBeTruthy();
           console.log(`  ✓ [${agent.label}] ACP initialize OK`);
         },
-        CONNECT_TIMEOUT,
+        CONNECT_TIMEOUT
       );
 
       // --- 3. Session creation ---
@@ -241,7 +228,7 @@ describe('Agent Connectivity Integration Tests', () => {
             console.log(`  ✓ [${agent.label}] session/new OK (sessionId=${sessionResponse.sessionId || 'N/A'})`);
           });
         },
-        CONNECT_TIMEOUT + SESSION_TIMEOUT,
+        CONNECT_TIMEOUT + SESSION_TIMEOUT
       );
 
       // --- 4. Stream stability: send prompt and collect chunks ---
@@ -256,12 +243,7 @@ describe('Agent Connectivity Integration Tests', () => {
 
             connection.onSessionUpdate = (data: AcpSessionUpdate) => {
               updates.push(data);
-              if (
-                data.update &&
-                typeof data.update === 'object' &&
-                'sessionUpdate' in data.update &&
-                data.update.sessionUpdate === 'agent_message_chunk'
-              ) {
+              if (data.update && typeof data.update === 'object' && 'sessionUpdate' in data.update && data.update.sessionUpdate === 'agent_message_chunk') {
                 hasTextChunk = true;
               }
             };
@@ -279,7 +261,7 @@ describe('Agent Connectivity Integration Tests', () => {
             console.log(`  ✓ [${agent.label}] Received ${updates.length} stream updates`);
           });
         },
-        CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT,
+        CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT
       );
 
       // --- 5. Graceful disconnect ---
@@ -300,7 +282,7 @@ describe('Agent Connectivity Integration Tests', () => {
             console.log(`  ✓ [${agent.label}] Graceful disconnect OK`);
           });
         },
-        CONNECT_TIMEOUT + SESSION_TIMEOUT + 10_000,
+        CONNECT_TIMEOUT + SESSION_TIMEOUT + 10_000
       );
     });
   }
@@ -337,7 +319,7 @@ describe('ACP Protocol Robustness', () => {
 
       await expect(connection.sendPrompt('test')).rejects.toThrow(/No active ACP session/);
     },
-    CONNECT_TIMEOUT,
+    CONNECT_TIMEOUT
   );
 
   itProto(
@@ -350,7 +332,7 @@ describe('ACP Protocol Robustness', () => {
       // Second disconnect should not throw
       await expect(connection.disconnect()).resolves.toBeUndefined();
     },
-    CONNECT_TIMEOUT + 10_000,
+    CONNECT_TIMEOUT + 10_000
   );
 
   itProto(
@@ -380,7 +362,7 @@ describe('ACP Protocol Robustness', () => {
         console.log(`  ✓ [multi-prompt] Total updates: ${updates.length} (first: ${updatesAfterFirst}, second: ${updates.length - updatesAfterFirst})`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2
   );
 
   it('should throw when connecting to an invalid backend with missing CLI path', async () => {
@@ -403,7 +385,7 @@ describe('ACP Protocol Robustness', () => {
       await connection.disconnect();
       expect(connection.isConnected).toBe(false);
     },
-    CONNECT_TIMEOUT + 10_000,
+    CONNECT_TIMEOUT + 10_000
   );
 });
 
@@ -458,7 +440,7 @@ describe('Stream Chunk Integrity', () => {
         console.log(`  ✓ [session-id-check] Unique sessionIds in stream: ${sessionIds.size}`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT
   );
 
   itStream(
@@ -469,13 +451,7 @@ describe('Stream Chunk Integrity', () => {
         const textChunks: string[] = [];
 
         connection.onSessionUpdate = (data) => {
-          if (
-            data.update &&
-            typeof data.update === 'object' &&
-            'sessionUpdate' in data.update &&
-            data.update.sessionUpdate === 'agent_message_chunk' &&
-            'content' in data.update
-          ) {
+          if (data.update && typeof data.update === 'object' && 'sessionUpdate' in data.update && data.update.sessionUpdate === 'agent_message_chunk' && 'content' in data.update) {
             const content = data.update.content as { text?: string };
             if (content.text) {
               textChunks.push(content.text);
@@ -496,7 +472,7 @@ describe('Stream Chunk Integrity', () => {
         console.log(`  ✓ [chunk-accumulation] ${textChunks.length} chunks, total ${fullText.length} chars`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT
   );
 
   itStream(
@@ -520,7 +496,7 @@ describe('Stream Chunk Integrity', () => {
         console.log(`  [end-turn] endTurnFired: ${endTurnFired}`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT
   );
 
   itStream(
@@ -553,7 +529,7 @@ describe('Stream Chunk Integrity', () => {
         console.log(`  ✓ [rapid-prompts] 3 prompts, total ${updateCount} updates, boundaries: [${msgBoundaries.join(', ')}]`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3
   );
 });
 
@@ -596,7 +572,7 @@ describe('Disconnect & Reconnect Resilience', () => {
       expect(connection.isConnected).toBe(true);
       console.log(`  ✓ Reconnect after disconnect OK`);
     },
-    CONNECT_TIMEOUT * 2 + 10_000,
+    CONNECT_TIMEOUT * 2 + 10_000
   );
 
   itResilience(
@@ -620,7 +596,7 @@ describe('Disconnect & Reconnect Resilience', () => {
       // the process was in "setup complete" state). Just verify no crash.
       console.log(`  [onDisconnect] called=${disconnectCalled}, info=${JSON.stringify(disconnectInfo)}`);
     },
-    CONNECT_TIMEOUT + 10_000,
+    CONNECT_TIMEOUT + 10_000
   );
 });
 
@@ -655,13 +631,7 @@ describe('History & Context Retention', () => {
   function collectText(conn: AcpConnection): () => string {
     const chunks: string[] = [];
     conn.onSessionUpdate = (data) => {
-      if (
-        data.update &&
-        typeof data.update === 'object' &&
-        'sessionUpdate' in data.update &&
-        data.update.sessionUpdate === 'agent_message_chunk' &&
-        'content' in data.update
-      ) {
+      if (data.update && typeof data.update === 'object' && 'sessionUpdate' in data.update && data.update.sessionUpdate === 'agent_message_chunk' && 'content' in data.update) {
         const content = data.update.content as { text?: string };
         if (content.text) {
           chunks.push(content.text);
@@ -688,23 +658,19 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1: state a unique fact
-        await connection.sendPrompt(
-          'Remember this: my project name is "NeonForge". Just confirm you noted it.',
-        );
+        await connection.sendPrompt('Remember this: my project name is "NeonForge". Just confirm you noted it.');
         const resp1 = getText();
         expect(resp1.length).toBeGreaterThan(0);
 
         // Turn 2: ask for the fact back
-        await connection.sendPrompt(
-          'What is my project name? Reply with just the name, nothing else.',
-        );
+        await connection.sendPrompt('What is my project name? Reply with just the name, nothing else.');
         const resp2 = getText().toLowerCase();
         expect(resp2).toContain('neonforge');
 
         console.log(`  ✓ [basic-context] Model recalled "NeonForge" — context retained`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2
   );
 
   // --- 2. Multi-turn progressive context accumulation ---
@@ -719,27 +685,19 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1
-        await connection.sendPrompt(
-          'I am building a REST API with Express.js. The port is 4567. Just acknowledge.',
-        );
+        await connection.sendPrompt('I am building a REST API with Express.js. The port is 4567. Just acknowledge.');
         getText();
 
         // Turn 2
-        await connection.sendPrompt(
-          'The API has three endpoints: GET /users, POST /users, DELETE /users/:id. Just acknowledge.',
-        );
+        await connection.sendPrompt('The API has three endpoints: GET /users, POST /users, DELETE /users/:id. Just acknowledge.');
         getText();
 
         // Turn 3
-        await connection.sendPrompt(
-          'I also want to add rate limiting: 100 requests per minute per IP. Just acknowledge.',
-        );
+        await connection.sendPrompt('I also want to add rate limiting: 100 requests per minute per IP. Just acknowledge.');
         getText();
 
         // Turn 4: quiz on ALL accumulated context
-        await connection.sendPrompt(
-          'Summarize everything I told you about my API: the framework, port number, all endpoints, and the rate limit. Be concise.',
-        );
+        await connection.sendPrompt('Summarize everything I told you about my API: the framework, port number, all endpoints, and the rate limit. Be concise.');
         const summary = getText().toLowerCase();
 
         expect(summary).toContain('express');
@@ -750,7 +708,7 @@ describe('History & Context Retention', () => {
         console.log(`  ✓ [multi-turn-context] Model retained context across 4 turns`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 4,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 4
   );
 
   // --- 3. Coding task context: component requirements refined over turns ---
@@ -765,21 +723,15 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1: describe a component
-        await connection.sendPrompt(
-          'I have a React component called UserDashboard that shows a table of users with columns: name, email, role. Acknowledge.',
-        );
+        await connection.sendPrompt('I have a React component called UserDashboard that shows a table of users with columns: name, email, role. Acknowledge.');
         getText();
 
         // Turn 2: add a requirement
-        await connection.sendPrompt(
-          'I want to add a search bar to UserDashboard that filters users by name. Acknowledge.',
-        );
+        await connection.sendPrompt('I want to add a search bar to UserDashboard that filters users by name. Acknowledge.');
         getText();
 
         // Turn 3: verify the model remembers the full picture
-        await connection.sendPrompt(
-          'What is the component name I described, and what columns does the table have? Reply concisely.',
-        );
+        await connection.sendPrompt('What is the component name I described, and what columns does the table have? Reply concisely.');
         const resp = getText().toLowerCase();
 
         expect(resp).toContain('userdashboard');
@@ -790,7 +742,7 @@ describe('History & Context Retention', () => {
         console.log(`  ✓ [coding-task-context] Model retained component details across turns`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3
   );
 
   // --- 4. Context survives after a long response ---
@@ -805,29 +757,23 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1: state a unique identifier
-        await connection.sendPrompt(
-          'The secret code is "ZETA-7742". Remember it. Just confirm.',
-        );
+        await connection.sendPrompt('The secret code is "ZETA-7742". Remember it. Just confirm.');
         getText();
 
         // Turn 2: ask for a longer response to push turn-1 further back in context
-        await connection.sendPrompt(
-          'Write a brief explanation (3-5 sentences) of how TCP/IP works.',
-        );
+        await connection.sendPrompt('Write a brief explanation (3-5 sentences) of how TCP/IP works.');
         const longResp = getText();
         expect(longResp.length).toBeGreaterThan(50);
 
         // Turn 3: recall the code from turn 1
-        await connection.sendPrompt(
-          'What was the secret code I told you earlier? Reply with just the code.',
-        );
+        await connection.sendPrompt('What was the secret code I told you earlier? Reply with just the code.');
         const codeResp = getText().toUpperCase();
         expect(codeResp).toContain('ZETA-7742');
 
         console.log(`  ✓ [long-response-context] Model recalled secret code after long response`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3
   );
 
   // --- 5. Numerical / precise data retention across a distractor turn ---
@@ -842,21 +788,15 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1: provide several specific numbers
-        await connection.sendPrompt(
-          'Here are the server specs: CPU cores = 32, RAM = 256GB, disk = 4TB, max connections = 10000. Acknowledge.',
-        );
+        await connection.sendPrompt('Here are the server specs: CPU cores = 32, RAM = 256GB, disk = 4TB, max connections = 10000. Acknowledge.');
         getText();
 
         // Turn 2: unrelated topic to act as a distractor
-        await connection.sendPrompt(
-          'What is the difference between TCP and UDP? One sentence.',
-        );
+        await connection.sendPrompt('What is the difference between TCP and UDP? One sentence.');
         getText();
 
         // Turn 3: quiz on the numbers from turn 1
-        await connection.sendPrompt(
-          'How many CPU cores and how much RAM did I specify for the server? Reply with just the numbers.',
-        );
+        await connection.sendPrompt('How many CPU cores and how much RAM did I specify for the server? Reply with just the numbers.');
         const resp = getText();
 
         expect(resp).toContain('32');
@@ -865,7 +805,7 @@ describe('History & Context Retention', () => {
         console.log(`  ✓ [numerical-context] Model retained precise numerical values`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 3
   );
 
   // --- 6. Debugging scenario: error context carried across turns ---
@@ -880,15 +820,11 @@ describe('History & Context Retention', () => {
         await connection.newSession(TEST_CWD);
 
         // Turn 1: paste an error
-        await connection.sendPrompt(
-          'I got this error: "TypeError: Cannot read properties of undefined (reading \'map\')" at line 42 of UserList.tsx. Acknowledge.',
-        );
+        await connection.sendPrompt('I got this error: "TypeError: Cannot read properties of undefined (reading \'map\')" at line 42 of UserList.tsx. Acknowledge.');
         getText();
 
         // Turn 2: ask for the fix
-        await connection.sendPrompt(
-          'Which file and line number did the error occur at? Reply concisely.',
-        );
+        await connection.sendPrompt('Which file and line number did the error occur at? Reply concisely.');
         const resp = getText().toLowerCase();
 
         expect(resp).toContain('userlist');
@@ -897,7 +833,7 @@ describe('History & Context Retention', () => {
         console.log(`  ✓ [debug-context] Model retained error file & line across turns`);
       });
     },
-    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2,
+    CONNECT_TIMEOUT + SESSION_TIMEOUT + PROMPT_TIMEOUT * 2
   );
 });
 
